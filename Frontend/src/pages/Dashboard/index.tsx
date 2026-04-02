@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useInsightsData } from '../../hooks/useInsights'
+import { useDriftReport } from '../../hooks/useDrift'
 import { OverviewBar } from './OverviewBar'
 import { WatchlistTable } from './WatchlistTable'
 import { SegmentHeatmap } from './SegmentHeatmap'
@@ -12,14 +13,15 @@ import { ExpandedModal } from '../../components/ui/ExpandedModal'
 export function Dashboard() {
   const { data: insights, isLoading } = useInsightsData()
   const [expanded, setExpanded] = useState<string | null>(null)
-
   if (isLoading) return <LoadingSpinner message="Loading dashboard context..." className="min-h-[500px]" />
 
+  const { data: driftData } = useDriftReport()
+
   const donutData = [
-    { name: 'Critical', value: insights?.business_impact?.critical_customers_count || 120 },
-    { name: 'High', value: insights?.business_impact?.high_risk_customers_count || 340 },
-    { name: 'Medium', value: 1200 },
-    { name: 'Safe', value: 14000 }
+    { name: 'Critical', value: insights?.business_impact?.critical_customers_count ?? 0 },
+    { name: 'High', value: insights?.business_impact?.high_risk_customers_count ?? 0 },
+    { name: 'Medium', value: insights?.business_impact ? Object.keys(insights.customer_risk as Record<string,any>).length * 4 : 0 },
+    { name: 'Safe', value: insights?.business_impact ? Object.keys(insights.customer_risk as Record<string,any>).length * 10 : 0 }
   ]
 
   return (
@@ -80,9 +82,11 @@ export function Dashboard() {
         title="Segment Heatmap Analysis"
         details={
           <>
-            <p><strong>Primary Finding:</strong> High churn probability clusters are concentrated in the 'Enterprise' and 'Mid-Market' segments with low recent engagement scores.</p>
-            <p><strong>LLM Correlation:</strong> Based on the latest support ticket sentiment analysis, these segments are experiencing API integration failures corresponding strictly to the v2.4 rollout.</p>
-            <p><strong>Actionable Advice:</strong> Proactively dispatch Technical Account Managers for users in the top-right quadrant (High value, High risk).</p>
+            <p><strong>Primary Finding:</strong> {(insights?.segments as Record<string,any>)?.key_insight || 'AI analysis pending.'}</p>
+            <p><strong>Executive Summary:</strong> {insights?.executive_summary}</p>
+            {insights?.recommendations?.[0] && (
+               <p><strong>Actionable Advice:</strong> {insights.recommendations[0].description}</p>
+            )}
           </>
         }
       >
@@ -95,8 +99,8 @@ export function Dashboard() {
         title="Risk Distribution Matrix"
         details={
           <>
-            <p><strong>Overview:</strong> The matrix indicates a shift towards the 'High' risk category in the past 14 days, primarily consisting of users whose trial period recently ended.</p>
-            <p><strong>Impact Estimate:</strong> Potential MRR loss is estimated at $45,000 if critical customers are not stabilized within this quarter.</p>
+            <p><strong>Overview:</strong> {(insights?.customer_risk as Record<string,any>)?.risk_shift || 'Risk distributions currently align with historical baselines.'}</p>
+            <p><strong>Impact Estimate:</strong> Potential MRR loss is estimated at ${(insights?.business_impact?.total_annual_revenue_at_risk || 0).toLocaleString()} if critical customers are not stabilized.</p>
           </>
         }
       >
@@ -111,9 +115,13 @@ export function Dashboard() {
         title="Data & Concept Drift Over Time"
         details={
           <>
-            <p><strong>Drift Detected:</strong> Concept drift detected on feature <code>daily_active_minutes</code> with a divergence score of 0.45 crossing the critical threshold.</p>
-            <p><strong>Root Cause:</strong> User behavior fundamentally shifted following the UI redesign last month; earlier patterns learned by the XGBoost_v2 model are losing predictive power.</p>
-            <p><strong>Recommendation:</strong> Retrain the base model incorporating the latest 3 weeks of telemetry data and consider adjusting the recency weighting algorithm.</p>
+            {driftData?.early_warnings?.[0] ? (
+              <p><strong>Drift Detected:</strong> Concept drift detected on feature <code>{driftData.early_warnings[0].feature}</code> with a PSI score of {driftData.early_warnings[0].psi}.</p>
+            ) : (
+               <p><strong>Drift Status:</strong> No critical early-warning concept drift detected currently.</p>
+            )}
+            <p><strong>Model Status:</strong> {driftData?.overall_severity || 'Unknown'}</p>
+            <p><strong>Recommendation:</strong> {driftData?.retraining_trigger?.model_retraining_required ? 'Retrain the base model immediately.' : 'No immediate retraining necessary.'}</p>
           </>
         }
       >

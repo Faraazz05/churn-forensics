@@ -1,5 +1,5 @@
 import { useDriftReport } from '../../hooks/useDrift'
-import { DriftTrendLine } from '../../components/charts/DriftTrendLine'
+import { PSIBarChart } from '../../components/charts/PSIBarChart'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { RetrainingBanner } from './RetrainingBanner'
 import { EarlyWarningList } from './EarlyWarningList'
@@ -9,9 +9,13 @@ export function DriftAnalysis() {
   
   if (isLoading) return <LoadingSpinner className="min-h-[400px]" />
   
-  const mockTrend = [
-    { month: 'Jan', value: 0.02 }, { month: 'Feb', value: 0.05 }, { month: 'Mar', value: 0.12 }, { month: 'Apr', value: 0.24 }
-  ]
+  const chartData = data?.drift_features
+    ? data.drift_features.slice(0, 10).map(f => ({
+        feature: f.feature,
+        psi: f.psi ?? 0,
+        severity: f.drift_severity || (f.psi && f.psi > 0.2 ? 'Critical' : f.psi && f.psi > 0.1 ? 'Warning' : 'Safe')
+      }))
+    : []
 
   return (
     <div className="max-w-7xl mx-auto py-8">
@@ -25,9 +29,13 @@ export function DriftAnalysis() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 flex flex-col gap-8">
             <div className="bg-[#0F1629] p-8 rounded-xl border border-[#1E2A45] shadow-xl flex-1">
-               <h2 className="text-xl font-bold text-white mb-6 border-b border-[#1E2A45] pb-4">Global Drift Trend (PSI)</h2>
+               <h2 className="text-xl font-bold text-white mb-6 border-b border-[#1E2A45] pb-4">Feature PSI Distribution</h2>
                <div className="h-[300px]">
-                  <DriftTrendLine data={mockTrend} />
+                  {chartData.length > 0 ? (
+                    <PSIBarChart data={chartData} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-slate-500 text-sm">No feature drift data available.</div>
+                  )}
                </div>
             </div>
          </div>

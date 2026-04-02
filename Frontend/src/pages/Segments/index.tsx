@@ -9,8 +9,9 @@ export function SegmentsPage() {
   
   if (isLoading) return <LoadingSpinner className="min-h-[400px]" />
   
-  const mockData = [{ x: 'Enterprise', y: 'NA', value: 0.12 }, { x: 'Starter', y: 'NA', value: 0.65 }]
-  const chartData = data?.segments?.map(s => ({ x: s.dimension, y: s.value, value: s.churn_rate ?? 0 })) || mockData;
+  const chartData = data?.segments && data.segments.length > 0
+    ? data.segments.map(s => ({ x: s.dimension, y: s.value, value: s.churn_rate ?? 0 })) 
+    : []
 
   const degradingSegments = data?.global_insights?.top_degrading_segments || data?.segments?.filter(s => s.health_status === 'degrading') || [];
   const topSegments = (data?.segments || []).slice(0, 4);
@@ -32,8 +33,12 @@ export function SegmentsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 bg-[#0F1629] p-8 rounded-xl border border-[#1E2A45] shadow-xl min-h-[500px] flex flex-col">
             <h2 className="text-xl font-bold text-white mb-6 border-b border-[#1E2A45] pb-4">Cohort Risk Grid</h2>
-            <div className="flex-1">
-              <SegmentHeatmapChart data={chartData} />
+            <div className="flex-1 w-full h-full flex items-center justify-center">
+              {chartData.length > 0 ? (
+                <SegmentHeatmapChart data={chartData} />
+              ) : (
+                <div className="text-slate-500 text-sm">No multi-dimensional segment risk data available.</div>
+              )}
             </div>
          </div>
          

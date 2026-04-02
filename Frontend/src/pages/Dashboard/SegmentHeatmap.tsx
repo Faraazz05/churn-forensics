@@ -7,19 +7,9 @@ export function SegmentHeatmap() {
   const { data } = useSegments()
   const [isExpanded, setIsExpanded] = useState(false)
   
-  const mockData = [
-    { x: 'Enterprise', y: 'NA', value: 0.12 },
-    { x: 'Enterprise', y: 'EMEA', value: 0.08 },
-    { x: 'Enterprise', y: 'APAC', value: 0.15 },
-    { x: 'Pro', y: 'NA', value: 0.25 },
-    { x: 'Pro', y: 'EMEA', value: 0.45 },
-    { x: 'Starter', y: 'NA', value: 0.65 },
-    { x: 'Starter', y: 'EMEA', value: 0.55 },
-  ]
-  
-  const chartData = data?.segments 
+  const chartData = data?.segments && data.segments.length > 0
     ? data.segments.slice(0, 10).map((s) => ({ x: s.dimension, y: s.value, value: s.churn_rate || 0 }))
-    : mockData
+    : []
 
   const modal = isExpanded ? (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-[#0A0D1A]/80 backdrop-blur-md">
@@ -45,14 +35,20 @@ export function SegmentHeatmap() {
             <div className="col-span-1 flex flex-col gap-6">
                <div className="glass-panel p-8 rounded-2xl border-purple-500/30 bg-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.15)] relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-                 <h3 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-300"/> LLM Insight Generation</h3>
+                 <h3 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-300"/> Dynamic Insight Generation</h3>
                  <div className="text-slate-200 text-sm leading-relaxed mb-6 space-y-4 relative z-10">
-                   <p>The <span className="text-pink-400 font-mono">Starter × NA</span> segment exhibits the highest density of predicted churn risk (65%).</p>
-                   <p>Key drivers analyzed by SHAP indicate that high onboarding latency (&gt;4 days) is disproportionately affecting North American Starter accounts over the last 14 days.</p>
+                   {data?.segments && data.segments.length > 0 ? (
+                     <>
+                       <p>The <span className="text-pink-400 font-mono">{data.segments[0].value}</span> segment in <span className="text-pink-400 font-mono">{data.segments[0].dimension}</span> exhibits one of the highest densities of predicted churn risk ({(data.segments[0].churn_rate || 0.0) * 100}%).</p>
+                       <p>Health Status: <span className="uppercase tracking-wider font-bold text-slate-300">{data.segments[0].health_status || 'Unknown'}</span></p>
+                     </>
+                   ) : (
+                     <p>No high-risk segments have been detected currently.</p>
+                   )}
                  </div>
                  <div className="bg-black/30 border border-white/10 p-4 rounded-xl relative z-10">
-                   <span className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">AI Recommendation</span>
-                   <p className="text-sm text-white font-medium">Deploy automated re-engagement campaign targeting NA Starter accounts stalled in onboarding step 3.</p>
+                   <span className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">System Recommendation</span>
+                   <p className="text-sm text-white font-medium">{data?.global_insights?.recommended_strategy || 'Review global segment distributions to identify emerging risk patterns before they accelerate.'}</p>
                  </div>
                </div>
                
@@ -92,7 +88,7 @@ export function SegmentHeatmap() {
         </div>
         
         <div className="flex-1 w-full h-full flex items-center justify-center relative z-10 pointer-events-none -ml-4">
-           <SegmentHeatmapChart data={chartData} />
+           {chartData.length > 0 ? <SegmentHeatmapChart data={chartData} /> : <div className="text-slate-500 text-sm ml-4">No segment data available to map.</div>}
         </div>
       </div>
     </>

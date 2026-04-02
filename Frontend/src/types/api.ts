@@ -66,6 +66,7 @@ export interface GlobalInsights {
   n_improving: number
   n_stable: number
   n_accelerating: number
+  recommended_strategy?: string
 }
 
 export interface SegmentsResponse {

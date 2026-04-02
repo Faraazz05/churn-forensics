@@ -11,8 +11,25 @@ export function ExportButton() {
     if (type === 'pdf') exportPdf()
     else if (type === 'excel') exportExcel()
     else {
-      // For JSON export mock or simple trigger
-      alert("JSON export via API triggered.")
+      exportJson()
+    }
+  }
+
+  const exportJson = async () => {
+    try {
+      const response = await fetch('/api/insights') // Assumes API responds to this natively or fallback
+      const data = await response.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `forensics_export_${new Date().getTime()}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error("Failed to export JSON", e)
     }
   }
 
