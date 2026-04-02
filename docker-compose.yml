@@ -1,0 +1,119 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════════════
+# Customer Health Forensics System — Docker Compose
+# Phase 8: Deployment & MLOps
+#
+# Services:
+#   backend  → FastAPI on port 3000
+#   postgres → PostgreSQL 15 (production DB)
+#
+# Usage:
+#   Local dev:    docker compose up --build
+#   Production:   docker compose -f docker-compose.yml up -d
+#   Logs:         docker compose logs -f backend
+#   Teardown:     docker compose down -v
+# ══════════════════════════════════════════════════════════════
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: churn_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-customer_health}
+      POSTGRES_USER:     ${POSTGRES_USER:-churn_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-churn_pass_change_in_prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-churn_user} -d ${POSTGRES_DB:-customer_health}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - churn_net
+
+  # ── FastAPI Backend ─────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: churn_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Database — uses postgres service above
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-churn_user}:${POSTGRES_PASSWORD:-churn_pass_change_in_prod}@postgres:5432/${POSTGRES_DB:-customer_health}
+
+      # Auth
+      API_KEY_ADMIN:    ${API_KEY_ADMIN:-admin-secret-change-this}
+      API_KEY_READONLY: ${API_KEY_READONLY:-readonly-key-change-this}
+
+      # LLM (optional)
+      LLM_MODE:                   ${LLM_MODE:-rules}
+      LLM_MODEL_ID:               ${LLM_MODEL_ID:-mistralai/Mistral-7B-Instruct-v0.2}
+      HUGGINGFACEHUB_API_TOKEN:   ${HUGGINGFACEHUB_API_TOKEN:-}
+
+      # App
+      HOST:      0.0.0.0
+      PORT:      3000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DEBUG:     ${DEBUG:-false}
+
+    volumes:
+      # Persist phase artifacts across container restarts
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      # Mount source for hot-reload in dev
+      # - ./src:/app/src   ← uncomment for development
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:3000/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+    networks:
+      - churn_net
+
+  # ── Optional: Nginx reverse proxy ──────────────────────────
+  # Uncomment for production to serve frontend + proxy /api → backend
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: churn_nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./Frontend/dist:/usr/share/nginx/html:ro
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - churn_net
+
+# ── Volumes ────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+
+# ── Networks ───────────────────────────────────────────────────
+networks:
+  churn_net:
+    driver: bridge

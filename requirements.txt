@@ -1,0 +1,44 @@
+# Customer Health Forensics — Phase 6 Backend
+# Install: pip install -r requirements.txt
+
+# ── Core FastAPI ──────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+python-multipart>=0.0.9
+
+# ── Database ──────────────────────────────────────────────────
+sqlalchemy>=2.0.0
+aiosqlite>=0.20.0              # SQLite async driver (dev)
+asyncpg>=0.29.0                # PostgreSQL async driver (prod)
+psycopg2-binary>=2.9.9       # sync PostgreSQL (optional)
+
+# ── Phase dependencies (shared) ──────────────────────────────
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+joblib>=1.3
+openpyxl>=3.1                  # Excel read/write
+
+# ── Phase 2 XAI ───────────────────────────────────────────────
+shap>=0.44
+lime>=0.2
+
+# ── Phase 4 Drift ─────────────────────────────────────────────
+scipy>=1.11
+
+# ── Phase 5 Insights ──────────────────────────────────────────
+jinja2>=3.1
+langchain>=0.1
+langchain-huggingface>=0.0.3
+
+# ── Reports ───────────────────────────────────────────────────
+reportlab>=4.0                 # PDF generation (optional)
+
+# ── ML training (Phase 1) ────────────────────────────────────
+xgboost>=2.0                   # optional — falls back to Logistic
+imbalanced-learn>=0.11
+
+# ── Logging / utils ──────────────────────────────────────────
+python-dotenv>=1.0
