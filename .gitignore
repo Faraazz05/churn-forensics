@@ -42,7 +42,6 @@ __pycache__/
 .Python
 *.egg-info/
 dist/
-build/
 .eggs/
 *.egg
 pip-log.txt
