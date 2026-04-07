@@ -63,10 +63,12 @@ env/
 .venv/
 .env/
 ENV/
+.Customer/
 
 # ── Jupyter notebooks checkpoints ──────────────────────────────
 .ipynb_checkpoints/
 */.ipynb_checkpoints/
+notebooks/
 
 # ── Node / Frontend ────────────────────────────────────────────
 node_modules/
