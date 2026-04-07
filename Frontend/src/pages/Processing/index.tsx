@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { usePipelineStatus } from '../../hooks/usePipeline'
 import { PipelineStageTracker } from './PipelineStageTracker'
 import { SystemLogPanel } from './SystemLogPanel'
@@ -9,7 +10,34 @@ export function Processing() {
   const navigate = useNavigate()
   const { data: statusData } = usePipelineStatus(runId || '')
 
-  const isDone = statusData?.status === 'done'
+  // Demo simulation: if no valid backend status, simulate pipeline phases
+  const [simulatedPhases, setSimulatedPhases] = useState<string[]>([])
+  const [simDone, setSimDone] = useState(false)
+
+  useEffect(() => {
+    // If we have real data, skip simulation
+    if (statusData?.status) return
+
+    const allPhaseIds = [
+      'ingestion', 'feature_eng', 'model_selection', 'best_model',
+      'xai', 'segments', 'drift', 'insights'
+    ]
+    let idx = 0
+    const interval = setInterval(() => {
+      if (idx < allPhaseIds.length) {
+        setSimulatedPhases(prev => [...prev, allPhaseIds[idx]])
+        idx++
+      } else {
+        setSimDone(true)
+        clearInterval(interval)
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [statusData])
+
+  const hasRealData = statusData?.status != null
+  const isDone = hasRealData ? statusData?.status === 'done' : simDone
+  const phases = hasRealData ? (statusData?.phases_run || []) : simulatedPhases
 
   return (
     <div className="max-w-6xl mx-auto py-8">
@@ -20,7 +48,7 @@ export function Processing() {
             <span className="text-xl">{!isDone ? '⚙️' : '✅'}</span>
             <p className={`text-lg font-medium tracking-wide ${!isDone ? 'text-blue-300' : 'text-emerald-400'}`}>
               {!isDone ? "Training and evaluating ML algorithms on latest dataset..." : "Analysis complete. Models are ready."} 
-              <span className="ml-3 font-mono text-sm opacity-50">[{runId}]</span>
+              <span className="ml-3 font-mono text-sm opacity-50">[{runId || 'demo-run'}]</span>
             </p>
           </div>
         </div>
@@ -36,13 +64,29 @@ export function Processing() {
         )}
       </div>
 
+      {/* Estimated time for 4GB RAM machine */}
+      {!isDone && (
+        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
+          <span className="text-amber-400 text-lg">⏱️</span>
+          <div>
+            <p className="text-amber-300 font-medium text-sm">Estimated Processing Time</p>
+            <p className="text-slate-400 text-xs mt-0.5">
+              On a 4GB RAM localhost: <span className="text-white font-mono">~8–15 min</span> for 10K rows &nbsp;|&nbsp; 
+              <span className="text-white font-mono">~45–90 min</span> for 100K rows &nbsp;|&nbsp;
+              <span className="text-white font-mono">~3–5 hrs</span> for 500K rows (may require swap).
+              SVM is dropped at 50K+ rows to save memory.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-[600px]">
          <div className="lg:col-span-2 flex flex-col gap-8 h-full">
            <div className="flex-none">
              <LiveMetricsPanel />
            </div>
            <div className="flex-1">
-             <PipelineStageTracker phases={statusData?.phases_run || []} isDone={isDone} />
+             <PipelineStageTracker phases={phases} isDone={isDone} />
            </div>
          </div>
          <div className="lg:col-span-1 h-full">

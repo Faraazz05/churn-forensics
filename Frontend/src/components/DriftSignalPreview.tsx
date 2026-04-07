@@ -143,7 +143,7 @@ export function DriftSignalPreview() {
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           <span className="text-[#EF4444] font-medium text-sm md:text-base">
-            Model Retraining Required — PSI > 0.20 on 3+ features
+            Model Retraining Required — PSI &gt; 0.20 on 3+ features
           </span>
         </motion.div>
 

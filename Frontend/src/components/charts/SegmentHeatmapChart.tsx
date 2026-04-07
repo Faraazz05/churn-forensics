@@ -17,9 +17,9 @@ export function SegmentHeatmapChart({ data }: { data: HeatmapData[] }) {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div className="bg-[#0F1629] border border-[#1E2A45] p-2 rounded text-sm text-slate-200 shadow-xl">
-          <p>{`${data.y} × ${data.x}`}</p>
-          <p className="font-bold text-blue-400">{`Churn: ${(data.value * 100).toFixed(1)}%`}</p>
+        <div className="bg-[#0F1629] border border-[#1E2A45] px-4 py-3 rounded-xl text-sm text-slate-200 shadow-2xl">
+          <p className="font-medium text-slate-300 mb-1">{`${data.y} × ${data.x}`}</p>
+          <p className="font-bold text-blue-400 text-base">{`Churn: ${(data.value * 100).toFixed(1)}%`}</p>
         </div>
       )
     }
@@ -27,11 +27,29 @@ export function SegmentHeatmapChart({ data }: { data: HeatmapData[] }) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 60 }}>
-        <XAxis type="category" dataKey="x" name="Category X" stroke="#64748B" tick={{ fill: '#64748B', fontSize: 12 }} />
-        <YAxis type="category" dataKey="y" name="Category Y" stroke="#64748B" tick={{ fill: '#64748B', fontSize: 12 }} />
-        <ZAxis type="number" dataKey="value" range={[400, 400]} />
+    <ResponsiveContainer width="100%" height={380}>
+      <ScatterChart margin={{ top: 24, right: 30, bottom: 30, left: 80 }}>
+        <XAxis
+          type="category"
+          dataKey="x"
+          name="Category X"
+          stroke="#475569"
+          tick={{ fill: '#94A3B8', fontSize: 13, fontWeight: 500 }}
+          tickLine={{ stroke: '#334155' }}
+          axisLine={{ stroke: '#1E2A45' }}
+          dy={10}
+        />
+        <YAxis
+          type="category"
+          dataKey="y"
+          name="Category Y"
+          stroke="#475569"
+          tick={{ fill: '#94A3B8', fontSize: 13, fontWeight: 500 }}
+          tickLine={{ stroke: '#334155' }}
+          axisLine={{ stroke: '#1E2A45' }}
+          dx={-8}
+        />
+        <ZAxis type="number" dataKey="value" range={[500, 500]} />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(30, 42, 69, 0.4)' }} />
         <Scatter data={data} shape="square">
           {data.map((entry, index) => (

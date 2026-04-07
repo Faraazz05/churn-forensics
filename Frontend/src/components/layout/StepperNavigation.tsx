@@ -1,13 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { useAppStore } from '../../stores/appStore'
 
 export function StepperNavigation() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { isDemoMode } = useAppStore()
 
-  const prefix = isDemoMode ? '/demo' : '/analysis'
+  const isDemo = pathname.startsWith('/demo')
+  const prefix = isDemo ? '/demo' : '/analysis'
   
   const steps = [
     { path: '/upload', label: 'Input Data' },
@@ -19,14 +18,14 @@ export function StepperNavigation() {
   let currentIndex = -1
   if (pathname === '/upload') currentIndex = 0
   else if (pathname.includes('/processing')) currentIndex = 1
-  else if (pathname === `${prefix}/model` || pathname === '/analysis/model' || pathname === '/demo/model') currentIndex = 2
-  else if (pathname === `${prefix}/dashboard` || pathname === '/analysis/dashboard' || pathname === '/demo/dashboard') currentIndex = 3
+  else if (pathname === `${prefix}/model`) currentIndex = 2
+  else if (pathname === `${prefix}/dashboard`) currentIndex = 3
 
   if (currentIndex === -1 || currentIndex === 1) return null
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      if (currentIndex === 2) navigate('/upload') // skip processing going back
+      if (currentIndex === 2) navigate(isDemo ? '/' : '/upload') // skip processing going back
       else navigate(steps[currentIndex - 1].path)
     }
   }

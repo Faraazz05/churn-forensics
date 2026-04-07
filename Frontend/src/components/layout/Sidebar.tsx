@@ -1,17 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, PieChart, TrendingDown, Lightbulb, Brain, Upload, FileText, Hexagon } from 'lucide-react'
-import { useAppStore } from '../../stores/appStore'
 import { useSystemHealth } from '../../hooks/useSystemHealth'
 
 export function Sidebar() {
   const { pathname } = useLocation()
-  const { isDemoMode } = useAppStore()
   const { data: health } = useSystemHealth()
 
-  const prefix = isDemoMode ? '/demo' : '/analysis'
+  const prefix = '/analysis'
   const navItems = [
     { name: 'Overview', path: `${prefix}/dashboard`, icon: LayoutDashboard },
-    { name: 'Watchlist', path: `/demo/dashboard`, icon: Users }, 
+    { name: 'Watchlist', path: `/analysis/dashboard`, icon: Users }, 
     { name: 'Segments', path: '/segments', icon: PieChart },
     { name: 'Drift', path: '/drift', icon: TrendingDown },
     { name: 'Insights', path: '/insights', icon: Lightbulb },
@@ -28,15 +26,14 @@ export function Sidebar() {
           <span className="font-bold text-lg text-white">Forensics</span>
         </Link>
         
-        <div className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider w-max mb-8 border
-          ${isDemoMode ? 'bg-[#3B82F6]/10 text-blue-400 border-blue-500/30' : 'bg-purple-900/40 text-purple-400 border-purple-800'}`}>
-          {isDemoMode ? 'DEMO MODE' : 'LIVE ANALYSIS'}
+        <div className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider w-max mb-8 border bg-purple-900/40 text-purple-400 border-purple-800`}>
+          LIVE ANALYSIS
         </div>
       </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path) && item.path !== '/demo/dashboard');
+          const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path) && item.name !== 'Watchlist');
           return (
             <Link
               key={item.name}

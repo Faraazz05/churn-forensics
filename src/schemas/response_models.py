@@ -62,6 +62,7 @@ class SegmentOut(BaseModel):
     segment_id:          str
     dimension:           str
     value:               str
+    segment_size:        Optional[int] = None
     churn_rate:          Optional[float]
     previous_churn_rate: Optional[float]
     churn_delta:         Optional[float]

@@ -1,4 +1,6 @@
 import React from 'react';
+import { Github, Globe } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
@@ -41,14 +43,14 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Column 2: Platform Links */}
+          {/* Column 2: Platform Links — uses real routes */}
           <div>
             <h4 className="text-[#F1F5F9] font-semibold mb-4 uppercase text-xs tracking-wider">Platform</h4>
             <ul className="space-y-3">
-              <li><a href="#demo" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">Demo Workspace</a></li>
-              <li><a href="#analysis" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">Start Analysis</a></li>
-              <li><a href="#docs" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">API Documentation</a></li>
-              <li><a href="#health" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">System Health Check</a></li>
+              <li><Link to="/demo" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">Demo Workspace</Link></li>
+              <li><Link to="/upload" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">Upload Dataset</Link></li>
+              <li><Link to="/demo/model" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">Model & XAI</Link></li>
+              <li><Link to="/demo/dashboard" className="text-sm text-[#64748B] hover:text-[#3B82F6] transition-colors">Dashboard</Link></li>
             </ul>
           </div>
 
@@ -95,6 +97,26 @@ export function Footer() {
           <p className="text-xs text-[#64748B] font-mono">
             v2.0 &middot; March 2026
           </p>
+          <div className="flex items-center gap-6">
+            <a
+              href="https://github.com/Faraazz05/churn-forensics"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-[#64748B] hover:text-[#3B82F6] transition-colors group"
+            >
+              <Github className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span>GitHub</span>
+            </a>
+            <a
+              href="https://faraazz05.github.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-[#64748B] hover:text-[#8B5CF6] transition-colors group"
+            >
+              <Globe className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span>Portfolio</span>
+            </a>
+          </div>
           <p className="text-xs text-[#64748B]">
             Released under MIT License.
           </p>

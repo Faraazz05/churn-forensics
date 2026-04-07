@@ -14,9 +14,9 @@ Design principles:
   - Max context window kept under 2048 tokens
 """
 
-from jinja2 import Environment, BaseLoader
+from jinja2 import Environment
 
-_env = Environment(loader=BaseLoader())
+_env = Environment()
 
 
 # ── Template definitions ────────────────────────────────────────
@@ -33,7 +33,7 @@ DATA:
 - Churn change vs previous period: {{ churn_delta | round(3) }} ({{ '+' if churn_delta > 0 else '' }}{{ (churn_delta * 100) | round(1) }}%)
 - Customers at Critical risk (prob > 0.7): {{ n_critical }}
 - Top degrading segment: {{ top_segment }} (churn {{ top_segment_rate | round(1) }}%)
-- Revenue at risk: ${{ revenue_at_risk | int | format_number }}
+- Revenue at risk: ${{ "{:,}".format(revenue_at_risk | int) }}
 - Early warning features drifting: {{ early_warning_features | join(', ') }}
 - Overall drift severity: {{ drift_severity }}
 
@@ -154,15 +154,10 @@ class PromptTemplates:
     def render(self, template_name: str, **context) -> str:
         """
         Render a template with the given context.
-
-        Adds custom Jinja2 filter: format_number (comma thousands separator).
         """
         if template_name not in self._compiled:
             raise ValueError(f"Unknown template: '{template_name}'. "
                              f"Available: {list(self._compiled.keys())}")
-
-        # Custom filter for number formatting
-        _env.filters["format_number"] = lambda n: f"{int(n):,}"
 
         tpl = self._compiled[template_name]
         try:

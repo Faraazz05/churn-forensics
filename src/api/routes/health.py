@@ -4,10 +4,9 @@ api/routes/health.py
 GET /health — system status check.
 """
 import time
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from schemas.response_models import HealthResponse
 from core.config import get_settings
-from core.security import require_api_key
 from core.database import engine
 from services.prediction_service import is_model_loaded
 
@@ -17,7 +16,7 @@ _START   = time.time()
 
 
 @router.get("/health", response_model=HealthResponse, tags=["System"])
-async def health_check(_=Depends(require_api_key)):
+async def health_check():
     """System liveness + readiness check."""
     db_ok = False
     try:

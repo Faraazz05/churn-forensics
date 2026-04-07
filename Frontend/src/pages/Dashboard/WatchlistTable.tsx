@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { ChevronRight, ArrowUpDown, X, Sparkles, FileText, Users } from 'lucide-react'
-import { useWatchlist } from '../../hooks/useCustomers'
 
-export function WatchlistTable() {
-  const { data: watchlistData } = useWatchlist(0.7)
+export function WatchlistTable({ filteredCustomers, filters }: { filteredCustomers: any[], filters: any }) {
   const [isExpanded, setIsExpanded] = useState(false)
   
-  const customers = watchlistData?.customers || []
+  const customers = filteredCustomers || []
 
   const borderColors: Record<string, string> = {
     Critical: 'border-l-red-500 shadow-[inset_4px_0_0_0_rgba(239,68,68,1)]',

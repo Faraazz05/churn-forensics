@@ -206,11 +206,26 @@ def generate_snapshot_dataset(
     """
     Generate 12-month rolling snapshots for drift detection.
 
-    Months 1-7:  stable behaviour (reference period)
-    Months 8-12: gradual engagement decay (drift period, 6% per month)
-                 — this is the ground truth that PSI + KS-test should detect.
+    Realistic drift model:
+      Months 1-4:   stable baseline (reference period)
+      Months 5-7:   subtle engagement decline begins (early warning period)
+      Months 8-12:  accelerating degradation + churn buildup (drift period)
 
-    Output: n_months * total_records rows  (12 * 500k = 6M rows)
+    Features that drift include:
+      - logins_per_week          (gradual decline)
+      - monthly_active_days      (gradual decline)
+      - last_login_days_ago      (gradual increase = recency worsens)
+      - support_tickets_last_90d (gradual increase = friction)
+      - payment_failures_last_6m (step increase from month 8+)
+      - nps_score                (gradual decline = dissatisfaction)
+      - avg_session_duration_min (gradual decline from month 6+)
+
+    Churn probability is re-derived each month from shifted features,
+    so churn rate genuinely increases over time — not artificially pasted.
+
+    Customer IDs are consistent across months (longitudinal simulation).
+
+    Output: n_months * base_records rows
     Memory-safe: loads base data once, modifies per month, streams to CSV.
     """
     output_path = Path(output_path)
@@ -223,39 +238,182 @@ def generate_snapshot_dataset(
     if verbose:
         print(f"\n[SnapshotGenerator] Generating {n_months}-month snapshots "
               f"({len(base) * n_months / 1e6:.1f}M rows)...")
+        print(f"  Drift model: stable months 1-4 → early decay 5-7 → full drift 8-12")
 
     for month in range(1, n_months + 1):
         snap = base.copy()
         snap["snapshot_month"] = month
+        n = len(snap)
 
-        if month >= 8:
-            decay = 1.0 - (month - 7) * 0.06      # 6% decay per drift month
-            noise = rng.normal(0, 0.04, len(snap))
+        # ── Seasonal oscillation (affects all months) ──────────────
+        # Slight engagement dip in months 6-8 (summer lull) and boost in 1-2 (New Year)
+        seasonal = 1.0 + 0.03 * np.cos(2 * np.pi * (month - 1) / 12)
 
-            # Engagement decays
+        # ── Gradual drift from month 5 onwards ─────────────────────
+        if month >= 5:
+            # Drift intensity ramps up: months 5-7 subtle, 8-12 aggressive
+            drift_intensity = (month - 4) / 8.0  # 0.125 at month 5 → 1.0 at month 12
+
+            # Per-customer noise (some customers drift more than others)
+            noise = rng.normal(0, 0.03, n)
+
+            # Engagement features DECAY
+            eng_decay = 1.0 - drift_intensity * 0.35  # up to 35% reduction by month 12
             snap["logins_per_week"] = np.clip(
-                snap["logins_per_week"] * (decay + noise), 0, 20
+                snap["logins_per_week"] * (eng_decay + noise) * seasonal, 0, 20
             ).round(1)
             snap["monthly_active_days"] = np.clip(
-                snap["monthly_active_days"] * (decay + noise * 0.5), 0, 30
+                snap["monthly_active_days"] * (eng_decay + noise * 0.5) * seasonal, 0, 30
             ).round(0).astype(int)
 
-            # Payment stress increases slightly
-            snap["payment_failures_last_6m"] = np.clip(
-                snap["payment_failures_last_6m"] + rng.poisson(0.25, len(snap)), 0, 6
+            # Recency WORSENS (last_login_days_ago increases)
+            recency_growth = 1.0 + drift_intensity * 0.50  # up to 50% increase
+            snap["last_login_days_ago"] = np.clip(
+                snap["last_login_days_ago"] * (recency_growth + noise), 0, 180
+            ).round(0).astype(int)
+
+            # Support tickets INCREASE (friction signal)
+            ticket_boost = rng.poisson(drift_intensity * 0.6, n)
+            snap["support_tickets_last_90d"] = np.clip(
+                snap["support_tickets_last_90d"] + ticket_boost, 0, 15
             )
 
+            # NPS drops (dissatisfaction)
+            nps_decay = 1.0 - drift_intensity * 0.15  # up to 15% NPS reduction
+            snap["nps_score"] = np.clip(
+                snap["nps_score"] * (nps_decay + noise * 0.3), 0, 10
+            ).round(1)
+
+            # Session duration drops from month 6+
+            if month >= 6:
+                session_decay = 1.0 - (drift_intensity - 0.125) * 0.25
+                snap["avg_session_duration_min"] = np.clip(
+                    snap["avg_session_duration_min"] * (session_decay + noise * 0.5), 1, 90
+                ).round(1)
+
+            # Payment failures jump from month 8+ (financial stress)
+            if month >= 8:
+                stress_intensity = (month - 7) / 5.0  # 0.2 at month 8 → 1.0 at month 12
+                snap["payment_failures_last_6m"] = np.clip(
+                    snap["payment_failures_last_6m"]
+                    + rng.poisson(stress_intensity * 0.5, n), 0, 6
+                )
+        else:
+            # Months 1-4: only seasonal variation (baseline)
+            snap["logins_per_week"] = np.clip(
+                snap["logins_per_week"] * seasonal, 0, 20
+            ).round(1)
+
+        # ── Re-derive churn probability from shifted features ──────
+        # This ensures churn rate reflects actual feature degradation
+        churn_logit = (
+            CHURN_INTERCEPT
+            + 0.045 * snap["last_login_days_ago"]
+            - 0.35  * snap["logins_per_week"]
+            + 0.28  * snap["support_tickets_last_90d"]
+            + 0.30  * snap["payment_failures_last_6m"]
+            - 0.20  * snap["nps_score"]
+            + 0.18  * (snap["contract_type"] == "monthly").astype(int)
+            - 0.15  * (snap["plan_type"] == "enterprise").astype(int)
+            + rng.normal(0, 0.25, n)
+        )
+        snap["churn_probability_true"] = _sigmoid(churn_logit).round(4)
+        snap["churned"] = (rng.uniform(0, 1, n) < snap["churn_probability_true"]).astype(int)
+
+        # ── Write to CSV ───────────────────────────────────────────
         snap.to_csv(output_path, mode="w" if first else "a",
                     header=first, index=False)
         first = False
 
         if verbose:
-            drift_tag = "DRIFT" if month >= 8 else "stable"
-            print(f"  Month {month:02d} | churn={snap['churned'].mean():.3f} | {drift_tag}")
+            if month <= 4:
+                phase_tag = "STABLE"
+            elif month <= 7:
+                phase_tag = "EARLY DRIFT"
+            else:
+                phase_tag = "FULL DRIFT"
+            print(f"  Month {month:02d} | churn={snap['churned'].mean():.3f} "
+                  f"| logins={snap['logins_per_week'].mean():.2f} "
+                  f"| recency={snap['last_login_days_ago'].mean():.1f} | {phase_tag}")
 
     size_mb = output_path.stat().st_size / 1e6
     if verbose:
         print(f"\n  Saved → {output_path}  ({size_mb:.1f} MB)")
+
+
+def generate_snapshots_standalone(
+    output_path:    Path,
+    n_customers:    int  = TOTAL_RECORDS,
+    n_months:       int  = N_MONTHS,
+    chunk_size:     int  = CHUNK_SIZE,
+    seed:           int  = RANDOM_SEED,
+    verbose:        bool = True,
+) -> pd.DataFrame:
+    """
+    Generate multi-month snapshot data WITHOUT requiring a pre-existing
+    customers.csv. Useful for Colab notebooks and testing.
+
+    Generates base customers in-memory, then applies 12-month drift
+    simulation. Returns the full concatenated DataFrame.
+
+    Args:
+        output_path:  Where to save customers_snapshots.csv
+        n_customers:  Number of unique customers per month
+        n_months:     Number of months (default 12)
+        chunk_size:   Chunk size for base generation
+        seed:         Random seed
+        verbose:      Print progress
+
+    Returns:
+        DataFrame with all months concatenated (n_customers * n_months rows)
+    """
+    import tempfile
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if verbose:
+        print(f"\n[SnapshotStandalone] Generating {n_customers:,} customers × "
+              f"{n_months} months = {n_customers * n_months:,} total rows...")
+
+    # Step 1: Generate base customer data in-memory
+    rng = np.random.default_rng(seed)
+    n_chunks = max(1, n_customers // chunk_size)
+    base_chunks = []
+    for i in range(n_chunks):
+        base_chunks.append(_generate_chunk(chunk_size, i, rng))
+    remainder = n_customers % chunk_size
+    if remainder > 0:
+        base_chunks.append(_generate_chunk(remainder, n_chunks, rng))
+
+    base = pd.concat(base_chunks, ignore_index=True)
+    if verbose:
+        print(f"  Base dataset: {len(base):,} customers | "
+              f"churn={base['churned'].mean():.3f}")
+
+    # Step 2: Save base as temp file and use existing snapshot generator
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w") as tmp:
+        tmp_path = Path(tmp.name)
+        base.to_csv(tmp_path, index=False)
+
+    generate_snapshot_dataset(
+        output_path=output_path,
+        base_path=tmp_path,
+        n_months=n_months,
+        seed=seed + 100,
+        verbose=verbose,
+    )
+
+    # Cleanup temp file
+    tmp_path.unlink(missing_ok=True)
+
+    # Return the full dataset for immediate use
+    df_final = pd.read_csv(output_path)
+    if verbose:
+        months = sorted(df_final["snapshot_month"].unique())
+        print(f"\n  ✓ Snapshot months: {months}")
+        print(f"  ✓ Total rows: {len(df_final):,}")
+    return df_final
 
 
 def validate_dataset(df: pd.DataFrame, label: str = "") -> dict:
@@ -263,11 +421,18 @@ def validate_dataset(df: pd.DataFrame, label: str = "") -> dict:
     Run sanity checks on a sample of the generated data.
     Raises AssertionError if any check fails — designed to catch
     intercept miscalibration or broken generation logic early.
+    
+    Handles both single-month datasets and multi-month snapshots.
     """
     tag = f"[{label}] " if label else ""
 
+    # Check if this is a multi-month snapshot dataset
+    is_snapshot = "snapshot_month" in df.columns and df["snapshot_month"].nunique() > 1
+    n_months = df["snapshot_month"].nunique() if "snapshot_month" in df.columns else 1
+
     stats = {
         "n_rows":                len(df),
+        "n_months":              n_months,
         "churn_rate":            round(float(df["churned"].mean()), 4),
         "plan_dist":             df["plan_type"].value_counts(normalize=True).round(3).to_dict(),
         "contract_dist":         df["contract_type"].value_counts(normalize=True).round(3).to_dict(),
@@ -275,17 +440,32 @@ def validate_dataset(df: pd.DataFrame, label: str = "") -> dict:
         "avg_last_login":        round(float(df["last_login_days_ago"].mean()), 1),
         "avg_nps":               round(float(df["nps_score"].mean()), 2),
         "missing_values":        int(df.isnull().sum().sum()),
-        "customer_id_unique":    df["customer_id"].nunique() == len(df),
     }
+
+    # Customer ID uniqueness check differs for snapshots
+    if is_snapshot:
+        # In snapshots, same customer ID exists in every month — check per-month uniqueness
+        per_month_unique = all(
+            grp["customer_id"].nunique() == len(grp)
+            for _, grp in df.groupby("snapshot_month")
+        )
+        stats["customer_id_unique_per_month"] = per_month_unique
+    else:
+        stats["customer_id_unique"] = df["customer_id"].nunique() == len(df)
 
     print(f"\n{tag}── Dataset Validation ──────────────────────")
     for k, v in stats.items():
         print(f"  {k}: {v}")
 
     assert stats["missing_values"] == 0,           f"Missing values found"
-    assert stats["customer_id_unique"],             f"Duplicate customer_ids"
-    assert 0.15 <= stats["churn_rate"] <= 0.30,    \
-        f"Churn rate {stats['churn_rate']:.3f} outside [0.15, 0.30] — check CHURN_INTERCEPT"
+    if is_snapshot:
+        assert stats["customer_id_unique_per_month"], f"Duplicate customer_ids within a month"
+    else:
+        assert stats["customer_id_unique"],             f"Duplicate customer_ids"
+    # Widen churn rate bounds for snapshot data (later months have higher churn)
+    max_churn = 0.45 if is_snapshot else 0.30
+    assert 0.15 <= stats["churn_rate"] <= max_churn,    \
+        f"Churn rate {stats['churn_rate']:.3f} outside [0.15, {max_churn}] — check CHURN_INTERCEPT"
     assert stats["avg_last_login"] >= 5,            f"Avg last_login_days_ago suspiciously low"
 
     print(f"  ✓ All validation checks passed")
@@ -296,8 +476,25 @@ if __name__ == "__main__":
     # Quick smoke-test: generate 10k rows locally to validate before Colab full run
     import tempfile, os
     with tempfile.TemporaryDirectory() as tmp:
+        # Test 1: Main dataset generation
         p = Path(tmp) / "customers_test.csv"
         generate_main_dataset(p, total_records=10_000, chunk_size=2_000, verbose=True)
         df = pd.read_csv(p)
         validate_dataset(df, label="10k smoke test")
-        print("\n✓ data_generator.py smoke test passed")
+
+        # Test 2: Standalone snapshot generation (12 months)
+        snap_p = Path(tmp) / "customers_snapshots.csv"
+        df_snap = generate_snapshots_standalone(
+            output_path=snap_p,
+            n_customers=1_000,    # small for smoke test
+            chunk_size=500,
+            verbose=True,
+        )
+        months = sorted(df_snap["snapshot_month"].unique())
+        assert months == list(range(1, 13)), \
+            f"Expected 12 months, got: {months}"
+        validate_dataset(df_snap, label="Snapshot smoke test")
+
+        print(f"\n  Snapshot months found: {months}")
+        print(f"  Rows per month: {len(df_snap) // 12:,}")
+        print("\n✓ data_generator.py smoke test passed (main + snapshots)")

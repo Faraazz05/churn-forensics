@@ -39,7 +39,8 @@ import matplotlib.ticker as mticker
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
-from data_generator      import generate_main_dataset, generate_snapshot_dataset, validate_dataset
+from data_generator      import generate_main_dataset, generate_snapshot_dataset, \
+                                generate_snapshots_standalone, validate_dataset
 from feature_engineering import add_features, build_feature_matrix, validate_features, get_feature_names
 from model_selector      import run_model_selection
 
@@ -134,20 +135,45 @@ def step_matrices(
 
 
 def step_snapshots(data_dir: Path, sample_size: int | None) -> None:
-    """Generate 12-month snapshot dataset for drift detection (Phase 4)."""
+    """Generate 12-month snapshot dataset for drift detection (Phase 4).
+    
+    Works in both full and sample mode:
+      - Full mode:   uses customers.csv as base → 12 months × 500k = 6M rows
+      - Sample mode:  generates standalone snapshots → 12 months × sample_size rows
+    """
     snap_path = data_dir / "customers_snapshots.csv"
     base_path = data_dir / "customers.csv"
 
-    if sample_size is not None:
-        print(f"\n  [Snapshots] Skipping (sample mode — run full pipeline for snapshots)")
-        return
-
     if snap_path.exists():
-        print(f"\n  [Snapshots] Already exists: {snap_path}")
-        return
+        # Verify it actually has multiple months
+        import csv
+        with open(snap_path, "r") as f:
+            reader = csv.DictReader(f)
+            months_found = set()
+            for i, row in enumerate(reader):
+                months_found.add(row.get("snapshot_month"))
+                if len(months_found) > 1 or i > 10000:
+                    break
+        if len(months_found) > 1:
+            print(f"\n  [Snapshots] Already exists with multiple months: {snap_path}")
+            return
+        else:
+            print(f"\n  [Snapshots] Existing file only has 1 month — regenerating...")
 
-    print(f"\n  [Snapshots] Generating 12-month snapshots for drift detection...")
-    generate_snapshot_dataset(snap_path, base_path, verbose=True)
+    if sample_size is not None:
+        # Sample mode: generate standalone snapshots (no dependency on customers.csv)
+        print(f"\n  [Snapshots] Generating 12-month snapshots (sample mode: "
+              f"{sample_size:,} customers × 12 months)...")
+        generate_snapshots_standalone(
+            output_path=snap_path,
+            n_customers=sample_size,
+            n_months=12,
+            verbose=True,
+        )
+    else:
+        # Full mode: use customers.csv as base
+        print(f"\n  [Snapshots] Generating 12-month snapshots for drift detection...")
+        generate_snapshot_dataset(snap_path, base_path, verbose=True)
 
 
 def step_plots(

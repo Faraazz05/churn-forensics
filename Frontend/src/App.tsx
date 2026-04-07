@@ -5,6 +5,7 @@ import LandingPage from './index'
 import { DemoEntry } from './pages/Demo'
 import { ModelXAI } from './pages/ModelXAI'
 import { Dashboard } from './pages/Dashboard'
+import { GatedDashboard } from './pages/Dashboard/GatedDashboard'
 import { UploadData } from './pages/Upload'
 import { Processing } from './pages/Processing'
 import { CustomerProfile } from './pages/CustomerProfile'
@@ -23,9 +24,10 @@ export default function App() {
         <Route path="/demo/model" element={<ModelXAI />} />
         <Route path="/demo/dashboard" element={<Dashboard />} />
         <Route path="/upload" element={<UploadData />} />
+        <Route path="/processing" element={<Processing />} />
         <Route path="/processing/:runId" element={<Processing />} />
         <Route path="/analysis/model" element={<ModelXAI />} />
-        <Route path="/analysis/dashboard" element={<Dashboard />} />
+        <Route path="/analysis/dashboard" element={<GatedDashboard />} />
         <Route path="/customers/:id" element={<CustomerProfile />} />
         <Route path="/segments" element={<SegmentsPage />} />
         <Route path="/drift" element={<DriftAnalysis />} />

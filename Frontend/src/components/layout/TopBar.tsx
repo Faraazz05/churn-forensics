@@ -1,9 +1,7 @@
 import { useLocation } from 'react-router-dom'
-import { useAppStore } from '../../stores/appStore'
 
 export function TopBar() {
   const { pathname } = useLocation()
-  const { isDemoMode, toggleDemoMode } = useAppStore()
 
   // Simple string capitalization for breadcrumb mapping
   const breadcrumb = pathname === '/upload' ? 'Upload Dataset' :
@@ -25,18 +23,7 @@ export function TopBar() {
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        <label className="flex items-center cursor-pointer group">
-          <div className="relative">
-            <input type="checkbox" className="sr-only" checked={!isDemoMode} onChange={toggleDemoMode} />
-            <div className={`block w-12 h-6 rounded-full transition-all duration-300 shadow-inner ${!isDemoMode ? 'bg-blue-600/80' : 'bg-white/5 border border-white/10'}`}></div>
-            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${!isDemoMode ? 'translate-x-6' : ''}`}></div>
-          </div>
-          <div className={`ml-3 text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${!isDemoMode ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
-            {!isDemoMode ? 'Live Mode' : 'Demo Mode'}
-          </div>
-        </label>
-      </div>
+
     </header>
   )
 }

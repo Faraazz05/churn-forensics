@@ -86,7 +86,16 @@ class InsightEngine:
         """Load all previous phase outputs."""
         d = self.outputs_dir
 
-        self._data["segments"]   = _load(d / "segmentation/segmentation_results.json") or []
+        # Try both filenames (pipeline_runner saves "segment_results.json")
+        self._data["segments"]   = (_load(d / "segmentation/segment_results.json")
+                                    or _load(d / "segmentation/segmentation_results.json")
+                                    or [])
+        # Defensive: if segments is a dict with a "segments" key, unwrap it
+        if isinstance(self._data["segments"], dict):
+            self._data["segments"] = self._data["segments"].get("segments", [])
+        # Defensive: ensure every item is a dict (not a string)
+        self._data["segments"] = [s for s in self._data["segments"] if isinstance(s, dict)]
+
         self._data["insights"]   = _load(d / "segmentation/global_insights.json") or {}
         self._data["drift"]      = _load(d / "drift/drift_report.json") or {}
         self._data["warnings"]   = _load(d / "drift/early_warnings.json") or []

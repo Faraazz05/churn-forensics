@@ -45,6 +45,24 @@ async def get_segments(
     )
 
 
+import csv
+
+@router.get("/segments/trends", tags=["Segmentation"])
+async def get_segment_trends(_=Depends(require_api_key)):
+    """Return historical trend data from the segmentation engine."""
+    p = svc._seg_dir() / "trend_region.csv"
+    if not p.exists():
+        return []
+    
+    trends = []
+    with open(p, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            trends.append(row)
+            
+    return trends
+
+
 @router.get("/segments/{segment_id}", tags=["Segmentation"])
 async def get_segment(segment_id: str, _=Depends(require_api_key)):
     """Deep analysis for a specific segment."""
@@ -62,6 +80,7 @@ def _seg_to_schema(s: dict) -> dict:
         "segment_id":          s.get("segment_id","—"),
         "dimension":           s.get("dimension","—"),
         "value":               str(s.get("value","—")),
+        "segment_size":        s.get("segment_size", 0),
         "churn_rate":          s.get("churn_rate"),
         "previous_churn_rate": s.get("previous_churn_rate"),
         "churn_delta":         s.get("churn_delta"),
@@ -71,3 +90,4 @@ def _seg_to_schema(s: dict) -> dict:
         "acceleration":        s.get("acceleration"),
         "exceeds_benchmark":   s.get("exceeds_benchmark"),
     }
+

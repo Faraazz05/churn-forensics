@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Hexagon, Brain, Database, ShieldAlert, Activity } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { Footer } from './components/Footer'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -97,6 +98,7 @@ export default function LandingPage() {
            ))}
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # ── Phase artifact paths ──────────────────────────────────────
     # These point to where each phase stores its outputs.
-    BASE_DIR:         Path = Path(__file__).resolve().parent.parent.parent.parent
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     MODELS_DIR:       Path = BASE_DIR / "models"
     DATA_DIR:         Path = BASE_DIR / "data"
     OUTPUTS_DIR:      Path = BASE_DIR / "outputs"

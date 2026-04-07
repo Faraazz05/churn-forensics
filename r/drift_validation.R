@@ -97,6 +97,12 @@ compute_psi_r <- function(ref, cur, n_bins = 10) {
   breakpoints <- unique(breakpoints)
   if (length(breakpoints) < 2) return(NA_real_)
 
+  # Extend breakpoints to cover current data range (prevents hist() error
+  # when drift shifts values beyond reference distribution boundaries)
+  full_range <- range(c(ref, cur), na.rm = TRUE)
+  breakpoints[1]                  <- min(breakpoints[1], full_range[1]) - eps
+  breakpoints[length(breakpoints)] <- max(breakpoints[length(breakpoints)], full_range[2]) + eps
+
   ref_counts <- hist(ref, breaks = breakpoints, plot = FALSE)$counts
   cur_counts <- hist(cur, breaks = breakpoints, plot = FALSE)$counts
 

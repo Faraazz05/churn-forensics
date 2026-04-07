@@ -253,7 +253,9 @@ class QAEngine:
     def _load_all_data(self):
         """Pre-load all phase outputs into memory."""
         # Segmentation
-        seg = self._load_json("segmentation/segmentation_results.json") or []
+        seg = (self._load_json("segmentation/segment_results.json")
+               or self._load_json("segmentation/segmentation_results.json")
+               or [])
         seg_insights = self._load_json("segmentation/global_insights.json") or {}
         overall_churn = None
         if seg:

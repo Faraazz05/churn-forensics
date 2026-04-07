@@ -9,3 +9,7 @@ export const getSegments = async (filters: Record<string, any> = {}): Promise<Se
 export const getSegmentDetails = async (segmentId: string): Promise<SegmentOut> => {
   return apiClient.get(`/segments/${segmentId}`)
 }
+
+export const getTrends = async (): Promise<any[]> => {
+  return apiClient.get('/segments/trends')
+}

@@ -6,7 +6,7 @@ Thank you for your interest in contributing. This document explains how to get s
 
 ## Branching Strategy
 
-```
+```bash
 main          ← production-ready, protected
 develop       ← integration branch
 feature/xyz   ← new features (branch from develop)
@@ -50,6 +50,7 @@ npm run dev
 ## Coding Standards
 
 ### Python (Phases 1–6)
+
 - Style: follow PEP 8, enforced by `ruff`
 - Type hints: required on all function signatures
 - Docstrings: required on all classes and public functions
@@ -57,6 +58,7 @@ npm run dev
 - Run before committing: `ruff check src/ backend/src/`
 
 ### TypeScript (Phase 7)
+
 - Strict mode: enabled (`"strict": true` in tsconfig)
 - No `any` types
 - All component props must be typed with interfaces
@@ -83,6 +85,7 @@ npm run dev
 ## Adding a New Phase or Feature
 
 If extending the pipeline:
+
 1. Add Python source to `src/`
 2. Add a CLI runner at root level
 3. Add a Colab notebook to `notebooks/`
@@ -94,7 +97,7 @@ If extending the pipeline:
 
 ## Commit Message Format
 
-```
+```bash
 type(scope): short description
 
 Types: feat | fix | docs | refactor | test | chore | ci

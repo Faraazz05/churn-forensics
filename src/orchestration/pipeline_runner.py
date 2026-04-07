@@ -119,11 +119,23 @@ def run_full_pipeline(
         df_snap = pd.read_csv(snap_path, nrows=sample_size)
         months  = sorted(df_snap["snapshot_month"].unique())
         print(f"  {len(df_snap):,} rows | months: {months}")
+
+        # Validate it has multiple months — regenerate if it's single-month
+        if len(months) <= 1 and base_path.exists():
+            print(f"  [WARNING] Snapshot file only has {len(months)} month(s)")
+            print(f"  Regenerating with 12-month drift simulation...")
+            from data_generator import generate_snapshot_dataset
+            generate_snapshot_dataset(snap_path, base_path, verbose=True)
+            df_snap = pd.read_csv(snap_path, nrows=sample_size)
+            months  = sorted(df_snap["snapshot_month"].unique())
+            print(f"  Reloaded: {len(df_snap):,} rows | months: {months}")
     elif base_path.exists():
-        print("[Pipeline] No snapshots — using base dataset (no temporal comparison)")
-        df_snap = pd.read_csv(base_path, nrows=sample_size)
-        df_snap["snapshot_month"] = 1
-        months = [1]
+        print("[Pipeline] No snapshots found — generating 12-month snapshots from base data...")
+        from data_generator import generate_snapshot_dataset
+        generate_snapshot_dataset(snap_path, base_path, verbose=True)
+        df_snap = pd.read_csv(snap_path, nrows=sample_size)
+        months  = sorted(df_snap["snapshot_month"].unique())
+        print(f"  Generated: {len(df_snap):,} rows | months: {months}")
     else:
         raise FileNotFoundError(f"No data found in {data_dir}. Run train.py first.")
 

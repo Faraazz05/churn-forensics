@@ -35,15 +35,15 @@ export function MetricCard({ label, value, change, format = 'number' }: MetricCa
     : Math.floor(displayValue).toLocaleString()
 
   return (
-    <div className="glass-card p-6 relative overflow-hidden group">
+    <div className="glass-card p-6 relative overflow-hidden group flex flex-col justify-between h-full hover:shadow-[0_4px_24px_rgba(59,130,246,0.15)] transition-all duration-300">
       <div className="absolute inset-0 bg-blue-500/[0.02] opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none" />
-      <h3 className="text-slate-400 text-sm font-bold tracking-wider uppercase mb-2 relative z-10">{label}</h3>
-      <div className="flex items-baseline gap-4 relative z-10">
-        <span className="text-3xl font-bold font-mono text-white">{formattedValue}</span>
+      <h3 className="text-slate-400 text-sm font-bold tracking-wider uppercase mb-3 relative z-10">{label}</h3>
+      <div className="flex items-center justify-between gap-3 relative z-10 w-full overflow-hidden">
+        <span className="text-2xl 2xl:text-3xl font-bold font-mono text-white truncate">{formattedValue}</span>
         {change !== undefined && (
-          <div className={`flex items-center text-sm font-semibold px-2 py-0.5 rounded border ${change >= 0 ? 'text-green-400 bg-green-500/10 border-green-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
-            {change >= 0 ? <ArrowUpIcon className="w-4 h-4 mr-1" /> : <ArrowDownIcon className="w-4 h-4 mr-1" />}
-            {Math.abs(change)}%
+          <div className={`flex items-center justify-center shrink-0 min-w-[75px] text-sm font-semibold px-2 py-1.5 rounded-lg border ${change >= 0 ? 'text-green-400 bg-green-500/10 border-green-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
+            {change >= 0 ? <ArrowUpIcon className="w-3.5 h-3.5 mr-1 shrink-0" /> : <ArrowDownIcon className="w-3.5 h-3.5 mr-1 shrink-0" />}
+            <span>{Math.abs(change)}%</span>
           </div>
         )}
       </div>

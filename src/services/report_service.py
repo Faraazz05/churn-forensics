@@ -128,15 +128,41 @@ def generate_pdf_report() -> Path:
             story.append(Spacer(1,12))
 
             # Top recommendations
-            recs = report.get("recommendations",[])[:5]
+            recs = report.get("recommendations",[])
             if recs:
-                story.append(Paragraph("Top Recommendations", styles["Heading1"]))
+                story.append(Paragraph("Top Recommendations & RL Actions", styles["Heading1"]))
                 for r in recs:
                     story.append(Paragraph(
-                        f"{r.get('rank','?')}. {r.get('description','—')}",
+                        f"<b>{r.get('rank','?')}. Rank:</b> {r.get('description','—')} (Target: {r.get('target', '—')}) [Source: {r.get('source', '—')}]",
                         styles["Normal"]
                     ))
-                    story.append(Spacer(1,4))
+                    story.append(Spacer(1, 6))
+
+            # Causal Logic & XAI
+            causal = report.get("causal_analysis", {})
+            if causal:
+                story.append(Paragraph("Causality & XAI Insights (SHAP)", styles["Heading1"]))
+                story.append(Paragraph(causal.get("narrative", "N/A"), styles["Normal"]))
+                story.append(Spacer(1, 6))
+                for driver in causal.get("top_xai_drivers", [])[:5]:
+                     story.append(Paragraph(f"- <b>{driver.get('feature', '')}</b> (Importance: {driver.get('importance', 0):.2f}, Direction: {driver.get('direction', '')})", styles["Normal"]))
+                story.append(Spacer(1, 12))
+
+            # Segments Insight
+            segs = report.get("segments", {})
+            if segs:
+                story.append(Paragraph("Segment Vulnerability", styles["Heading1"]))
+                story.append(Paragraph(segs.get("narrative", "N/A"), styles["Normal"]))
+                story.append(Spacer(1, 12))
+
+            # Drift & Operational Readiness
+            drift = report.get("drift_analysis", {})
+            if drift:
+                story.append(Paragraph("Data & Concept Drift Over Time", styles["Heading1"]))
+                story.append(Paragraph(f"Overall Severity: <b>{drift.get('overall_severity', 'N/A')}</b>", styles["Normal"]))
+                warnings_str = ", ".join(drift.get("early_warning_features", []))
+                story.append(Paragraph(f"Early Warning Features: {warnings_str if warnings_str else 'None'}", styles["Normal"]))
+                story.append(Spacer(1, 12))
 
         doc.build(story)
         log.info(f"[ReportService] PDF saved → {out_path}")
