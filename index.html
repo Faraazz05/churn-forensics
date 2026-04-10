@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      // Restore redirect from 404.html
+      (function(){
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== '/') {
+          window.history.replaceState(null, null, '/churn-forensics' + redirect);
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>Customer Health Forensics</title>
-    <script type="module" crossorigin src="./assets/index-BhvL2ot4.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-GLpSAlUF.css">
+    <script type="module" crossorigin src="/churn-forensics/assets/index-CRl4YJ4X.js"></script>
+    <link rel="modulepreload" crossorigin href="/churn-forensics/assets/rolldown-runtime-COnpUsM8.js">
+    <link rel="modulepreload" crossorigin href="/churn-forensics/assets/charts-CAsClAlb.js">
+    <link rel="modulepreload" crossorigin href="/churn-forensics/assets/motion-mlJDwxFm.js">
+    <link rel="modulepreload" crossorigin href="/churn-forensics/assets/vendor-3NkNWPq0.js">
+    <link rel="modulepreload" crossorigin href="/churn-forensics/assets/axios-OUewazeA.js">
+    <link rel="stylesheet" crossorigin href="/churn-forensics/assets/index-GLpSAlUF.css">
   </head>
   <body class="bg-[#0A0D1A] text-slate-50 font-sans">
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>

@@ -13,7 +13,9 @@ const queryClient = new QueryClient({
 
 const router = createBrowserRouter([
   { path: '/*', element: <App /> },
-])
+], {
+  basename: '/churn-forensics'
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
