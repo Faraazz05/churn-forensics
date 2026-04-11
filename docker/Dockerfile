@@ -18,11 +18,12 @@ COPY src/ ./src/
 COPY insight_runner.py ./insight_runner.py
 COPY run_full_pipeline.py ./run_full_pipeline.py
 
-# Create all runtime directories with correct permissions
-RUN mkdir -p /app/models /app/data /app/outputs/xai \
-             /app/outputs/segmentation /app/outputs/drift \
-             /app/outputs/insights /app/outputs/reports \
-             /app/uploads /app/logs
+# Copy models and outputs artifacts into the container
+COPY models/ ./models/
+COPY outputs/ ./outputs/
+
+# Create additional runtime directories with correct permissions if needed
+RUN mkdir -p /app/data /app/uploads /app/logs
 
 # Set environment
 ENV PYTHONPATH=/app/src \
