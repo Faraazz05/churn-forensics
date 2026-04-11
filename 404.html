@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Customer Health Forensics</title>
+    <script>
+      // GitHub Pages SPA redirect trick
+      var path = window.location.pathname;
+      var base = '/churn-forensics';
+      if (path.startsWith(base)) {
+        path = path.slice(base.length) || '/';
+      }
+      sessionStorage.redirect = path;
+      window.location.replace(base + '/?p=1');
+    </script>
+  </head>
+  <body></body>
+</html>
