@@ -114,7 +114,6 @@ outputs/_work/
 outputs/reports/
 outputs/segmentation/cohort_tables/
 outputs/segmentation/cohort_report.xlsx
-outputs/segmentation/trend_*.csv
 outputs/drift/psi_results.csv
 outputs/drift/ks_results.csv
 outputs/r_outputs/
