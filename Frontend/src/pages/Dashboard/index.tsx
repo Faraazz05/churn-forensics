@@ -188,12 +188,6 @@ export function Dashboard() {
         <ExportButton />
       </div>
 
-      <FilterBar
-        filters={filters}
-        onChange={setFilters}
-        totalCustomers={totalCustomers}
-        filteredCount={filteredCustomers.length || totalCustomers}
-      />
 
       <OverviewBar insights={insights} segmentData={segmentData} />
 
