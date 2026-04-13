@@ -12,3 +12,4 @@ outputs/insights/*.json filter=lfs diff=lfs merge=lfs -text
 outputs/insights/*.txt filter=lfs diff=lfs merge=lfs -text
 outputs/phase34_intelligence.json filter=lfs diff=lfs merge=lfs -text
 outputs/retrain_consensus.json filter=lfs diff=lfs merge=lfs -text
+outputs/segmentation/trend_*.csv filter=lfs diff=lfs merge=lfs -text
