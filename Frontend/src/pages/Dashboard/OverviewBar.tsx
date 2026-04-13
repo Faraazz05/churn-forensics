@@ -14,7 +14,7 @@ export function OverviewBar({ insights, segmentData }: OverviewBarProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
        <MetricCard label="Total Revenue at Risk" value={rAtRisk} format="currency" change={0} />
-       <MetricCard label="Global Churn Rate" value={0} format="percent" change={0} />
+       <MetricCard label="Global Churn Rate" value={segmentData?.global_insights?.overall_churn_rate || 0} format="percent" change={0} />
        <MetricCard label="Critical Risk Customers" value={criticallyAtRisk} format="number" change={0} />
        <MetricCard label="Segments Degrading" value={degradingCount} format="number" change={0} />
     </div>

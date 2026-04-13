@@ -1,12 +1,12 @@
 import { SegmentHeatmapChart } from '../../components/charts/SegmentHeatmapChart'
 import { useSegments } from '../../hooks/useSegments'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Download } from 'lucide-react'
 
 export function SegmentHeatmap() {
   const { data } = useSegments()
   
   const chartData = data?.segments && data.segments.length > 0
-    ? data.segments.slice(0, 10).map((s) => ({ x: s.dimension, y: s.value, value: s.churn_rate || 0 }))
+    ? data.segments.slice(0, 10).map((s) => ({ x: s.value, y: s.dimension, value: s.churn_rate || 0 }))
     : []
 
   return (
@@ -20,8 +20,13 @@ export function SegmentHeatmap() {
            </h2>
            <p className="text-sm text-slate-400 mt-1">Churn vulnerability mapped by Region × Plan</p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-blue-600 transition-all border border-white/10 shadow-sm relative z-10 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.6)] group-hover:scale-110">
-           <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        <div className="flex items-center gap-3">
+          <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-blue-600 transition-all border border-white/10 shadow-sm relative z-10 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.6)] group-hover:scale-110 cursor-pointer pointer-events-auto" onClick={() => console.log("Exporting Segment Heatmap...")}>
+             <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+          </button>
+          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-blue-600 transition-all border border-white/10 shadow-sm relative z-10 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.6)] group-hover:scale-110">
+             <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </div>
         </div>
       </div>
       

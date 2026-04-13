@@ -13,7 +13,7 @@ import pandas as pd
 from pathlib import Path
 
 SEGMENT_DIMENSIONS   = ["plan_type", "region", "contract_type", "behavior_tier", "nps_band_label"]
-DEGRADING_THRESHOLD  =  0.10
+DEGRADING_THRESHOLD  =  0.02
 IMPROVING_THRESHOLD  = -0.05
 SAAS_BENCHMARK       =  0.085
 MIN_SEGMENT_SIZE     =  50
